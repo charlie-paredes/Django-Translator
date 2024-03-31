@@ -8,6 +8,7 @@ from googletrans import Translator
 from django.shortcuts import redirect
 from gtts import gTTS
 import os
+import base64
 
 
 def home(request):
@@ -245,16 +246,17 @@ def translation_result(request, translated_text, translated_audio):
 def translate(request):
     if request.method == "POST":
         # Retrieve the audio data and the destination language from the request
-        audio_data = request.POST.get("audio_data")
+        audio_data_url = request.POST.get("audio_data")
         to_lang = request.POST.get("to_lang")
+
+        # Decode the audio data from base64
+        audio_data = base64.b64decode(audio_data_url.split(",")[1])
 
         # Perform the translation
         translated_text = translate_text(
             audio_data, to_lang
-        )  # Replace with actual translation function
-        translated_audio = generate_audio(
-            audio_data, to_lang
-        )  # Replace with actual translation function
+        )  # Call translate_text with two arguments
+        translated_audio = "Translated audio"  # Replace with actual translated audio
 
         # Redirect to the translation_result view with the translated text and audio
         return redirect(
@@ -284,15 +286,8 @@ def takecommand():
         return None
 
 
-def destination_language():
-    print("\nEnter the language you want to translate to (e.g., Hindi, English):")
-    to_lang = input()
-    return to_lang
-
-
-def translate_text(query):
+def translate_text(query, to_lang):
     translator = Translator()
-    to_lang = destination_language()
     translated = translator.translate(query, dest=to_lang)
     return translated.text
 
