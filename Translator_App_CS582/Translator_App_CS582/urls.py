@@ -18,14 +18,23 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from translator import views  # Import views from your app
+from django.urls import re_path
+from django.views.static import serve
+from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),  # Map the root URL to your view
     path(
-        "translation_result/<str:translated_text>/<str:translated_audio>/",
+        #"translation_result/<str:translated_text>/",
+        "translation_result/<str:translated_text>/<path:translated_audio>/",
         views.translation_result,
         name="translation_result",
     ),
     path("translate/", views.translate, name="translate"),  # Add this line
+    
+    re_path(r'^audio/(?P<path>.*)$', serve, {
+        'document_root': settings.MEDIA_ROOT,
+    }),
+    
 ]

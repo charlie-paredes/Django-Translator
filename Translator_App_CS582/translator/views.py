@@ -2,14 +2,18 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
-from playsound import playsound
+from django.urls import reverse
 import speech_recognition as sr
 from googletrans import Translator
 from django.shortcuts import redirect
 from gtts import gTTS
-import os
+from pydub import AudioSegment
+from io import BytesIO
 import base64
+import io
+from django.conf import settings
 
+AudioSegment.converter = "C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe"
 
 def home(request):
 
@@ -237,6 +241,7 @@ def translation_result(request, translated_text, translated_audio):
         "translation_result.html",
         {
             "translated_text": translated_text,
+            #"translated_audio": "data:audio/mp3;base64," + translated_audio,
             "translated_audio": translated_audio,
         },
     )
@@ -249,51 +254,76 @@ def translate(request):
         audio_data_url = request.POST.get("audio_data")
         to_lang = request.POST.get("to_lang")
 
-        # Decode the audio data from base64
-        audio_data = base64.b64decode(audio_data_url.split(",")[1])
+        if audio_data_url is None:
+            translated_text = "Audio data not found"
+        else:
+            audio_data = base64.b64decode(audio_data_url.split(",")[1])
+            audio_file = io.BytesIO(audio_data)
+            # Convert the audio data to WAV format
+            wav_file = convert_to_wav(audio_file)
+            query = recognize(wav_file)
+            translated_text = translate_text(query, to_lang)
 
-        # Perform the translation
-        translated_text = translate_text(
-            audio_data, to_lang
-        )  # Call translate_text with two arguments
-        translated_audio = "Translated audio"  # Replace with actual translated audio
-
+            #executes no problem
+            translated_audio = generate_audio(translated_text)
         # Redirect to the translation_result view with the translated text and audio
         return redirect(
             "translation_result",
             translated_text=translated_text,
             translated_audio=translated_audio,
         )
+        
 
     # If request method is not POST, redirect to home page or handle it appropriately
     return redirect("home")
 
+def convert_to_wav(audio_data):
+    audio = AudioSegment.from_file(audio_data, format="webm")
+    audio = audio.set_frame_rate(16000)  # Set frame rate suitable for speech recognition
+    wav_data = io.BytesIO()
+    audio.export(wav_data, format="wav")
+    wav_data.seek(0)  # Move cursor to start of the file
+    return wav_data
 
-def takecommand():
+def recognize(audio_data):
+    # Initialize recognizer class (for recognizing the speech)
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening.....")
-        r.pause_threshold = 1
-        audio = r.listen(source)
 
+    # Reading Audio file as source
+    # listening the audio file and store in audio_text variable
+    with sr.AudioFile(audio_data) as source:
+        
+        audio_text = r.listen(source)
+        
+    # recoginize_() method will throw a request error if the API is unreachable, hence using exception handling
     try:
-        print("Recognizing audio.....")
-        query = r.recognize_google(audio, language="en-in")
-        print(f"The User said {query}\n")
-        return query
-    except Exception as e:
-        print("say that again please.....")
-        return None
+        
+        # using google speech recognition
+        print('Converting audio transcripts into text ...')
+        text = r.recognize_google(audio_text)
+        return text
+     
+    except:
+         print('Sorry.. run again...')
 
-
-def translate_text(query, to_lang):
+def translate_text(text, to_lang):
+    if text is None:
+        return 'No text to translate'
     translator = Translator()
-    translated = translator.translate(query, dest=to_lang)
+    translated = translator.translate(text, dest=to_lang)
     return translated.text
 
 
+import os
+
 def generate_audio(text):
     speak = gTTS(text=text, lang="es", slow=False)
+    audio_file_path = os.path.join(settings.MEDIA_ROOT, "captured_voice.mp3")
+    speak.save(audio_file_path)
+    return os.path.join(settings.MEDIA_URL, "captured_voice.mp3")
+
+def generate_audio1(text):
+    speak = gTTS(text=text, lang="es", slow=False)
     speak.save("captured_voice.mp3")
-    playsound("captured_voice.mp3")
-    os.remove("captured_voice.mp3")
+    return "captured_voice.mp3"
+

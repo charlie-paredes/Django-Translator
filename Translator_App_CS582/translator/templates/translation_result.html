@@ -6,8 +6,8 @@
   <body>
     <h1>Translation Result</h1>
     <p>{{ translated_text }}</p>
-    <audio controls>
-      <source src="{{ translated_audio }}" type="audio/mpeg" />
-    </audio>
+    <!--these two lines are added-->
+    <audio id="audioPlayer" src="{{ translated_audio }}"></audio>
+    <button onclick="document.getElementById('audioPlayer').play()">Play Audio</button>
   </body>
 </html>
