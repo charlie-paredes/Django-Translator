@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Translation Result</title>
+  </head>
+  <body>
+    <h1>Translation Result</h1>
+    <p>{{ translated_text }}</p>
+    <!--these two lines are added-->
+    <audio id="audioPlayer" src="{{ translated_audio }}"></audio>
+    <button onclick="document.getElementById('audioPlayer').play()">Play Audio</button>
+  </body>
+</html>

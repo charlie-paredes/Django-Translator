@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Translator App</title>
+  </head>
+  <body>
+    <h1>Welcome to the Translator App!</h1>
+    <button id="record-button">Start Recording</button>
+    <button id="playback-button" style="display: none">Play Recording</button>
+    <form id="translation-form" method="post" action="/translate/">
+      {% csrf_token %}
+      <input type="hidden" id="audio-data" name="audio_data" />
+      <input
+        type="text"
+        name="to_lang"
+        placeholder="Enter destination language"
+      />
+      <button type="submit">Translate</button>
+    </form>
+
+    <script>
+      let mediaRecorder
+      let audioChunks = []
+      let audioBlob
+      let audioUrl
+      let audio
+
+      document
+        .getElementById('record-button')
+        .addEventListener('click', function () {
+          console.log('record-button clicked')
+          if (this.textContent === 'Start Recording') {
+            console.log('Start Recording')
+
+            // Clear the audioChunks array
+            audioChunks = []
+            console.log('audioChunks cleared')
+
+            // Revoke the old Blob URL
+            if (audioUrl) {
+              URL.revokeObjectURL(audioUrl)
+              console.log('old Blob URL revoked')
+            }
+
+            // Stop the MediaRecorder if it's recording
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+              mediaRecorder.stop()
+              console.log('MediaRecorder stopped')
+            }
+
+            // Start the countdown
+            let countdown = 3
+            this.textContent = 'Recording in ' + countdown + '...'
+            let countdownInterval = setInterval(() => {
+              countdown--
+              if (countdown > 0) {
+                this.textContent = 'Recording in ' + countdown + '...'
+              } else {
+                clearInterval(countdownInterval)
+                this.textContent = 'Recording...'
+              }
+            }, 1000)
+            console.log('countdown started')
+
+            // Delay the start of the recording by 3 seconds
+            setTimeout(() => {
+              console.log('starting recording')
+              navigator.mediaDevices
+                .getUserMedia({ audio: true })
+                .then((stream) => {
+                  // Delay the start of the MediaRecorder until the stream is ready
+                  setTimeout(() => {
+                    console.log('stream ready')
+                    mediaRecorder = new MediaRecorder(stream)
+                    mediaRecorder.start(1000) // Set timeslice to 1000 milliseconds
+                    console.log(
+                      'MediaRecorder started, state:',
+                      mediaRecorder.state
+                    )
+
+                    mediaRecorder.addEventListener('dataavailable', (event) => {
+                      audioChunks.push(event.data)
+                      console.log('data available')
+                    })
+
+                    mediaRecorder.addEventListener('stop', () => {
+                      console.log('MediaRecorder stopped')
+                      audioBlob = new Blob(audioChunks)
+                      audioUrl = URL.createObjectURL(audioBlob)
+                      audio = new Audio(audioUrl)
+                      const reader = new FileReader()
+
+                      reader.onloadend = () => {
+                        document.getElementById('audio-data').value =
+                          reader.result
+                        console.log('reader loaded')
+                      }
+
+                      reader.readAsDataURL(audioBlob)
+                      document.getElementById('playback-button').style.display =
+                        'block'
+                    })
+                  }, 1000)
+                })
+            }, 3000)
+          } else {
+            mediaRecorder.stop()
+            this.textContent = 'Start Recording'
+            console.log('Stop Recording')
+          }
+        })
+
+      document
+        .getElementById('playback-button')
+        .addEventListener('click', function () {
+          console.log('playback-button clicked')
+          if (this.textContent === 'Play Recording') {
+            console.log('Play Recording')
+            this.textContent = 'Playing...'
+
+            audio.play()
+
+            audio.addEventListener('ended', () => {
+              this.textContent = 'Play Recording'
+              console.log('Playback ended')
+            })
+          }
+        })
+    </script>
+  </body>
+</html>
