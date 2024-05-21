@@ -1,21 +1,28 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
   <head>
     <title>Translator App</title>
+    <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
   </head>
-  <body>
-    <h1>Welcome to the Translator App!</h1>
-    <button id="record-button">Start Recording</button>
-    <button id="playback-button" style="display: none">Play Recording</button>
-    <form id="translation-form" method="post" action="/translate/">
+  <body class="container">
+    <h1 class="text-center my-4">Welcome to the Translator App!</h1>
+    <div class="d-flex justify-content-center">
+      <button id="record-button" class="btn btn-primary mr-2">Start Recording</button>
+      <button id="playback-button" class="btn btn-secondary" style="display: none">Play Recording</button>
+    </div>
+    <form id="translation-form" method="post" action="/translate/" class="mt-4">
       {% csrf_token %}
       <input type="hidden" id="audio-data" name="audio_data" />
-      <input
-        type="text"
-        name="to_lang"
-        placeholder="Enter destination language"
-      />
-      <button type="submit">Translate</button>
+      <div class="form-group">
+        <input
+          type="text"
+          name="to_lang"
+          placeholder="Enter destination language"
+          class="form-control"
+        />
+      </div>
+      <button type="submit" class="btn btn-success">Translate</button>
     </form>
 
     <script>

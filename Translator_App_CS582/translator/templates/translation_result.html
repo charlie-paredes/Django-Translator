@@ -1,13 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
   <head>
     <title>Translation Result</title>
+    <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
   </head>
-  <body>
-    <h1>Translation Result</h1>
-    <p>{{ translated_text }}</p>
-    <!--these two lines are added-->
-    <audio id="audioPlayer" src="{{ translated_audio }}"></audio>
-    <button onclick="document.getElementById('audioPlayer').play()">Play Audio</button>
+  <body class="container">
+    <h1 class="text-center my-4">Translation Result</h1>
+    <p class="text-center">{{ translated_text }}</p>
+    <div class="d-flex justify-content-center">
+      <audio id="audioPlayer" src="{{ translated_audio }}" class="mr-2"></audio>
+      <button onclick="document.getElementById('audioPlayer').play()" class="btn btn-primary">Play Audio</button>
+    </div>
   </body>
 </html>
